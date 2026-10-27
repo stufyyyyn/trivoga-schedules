@@ -1,0 +1,26 @@
+name: Refresh public Poltava schedule
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '1-59/5 * * * *'
+  push:
+    paths: ['collector.py', '.github/workflows/refresh.yml']
+permissions:
+  contents: write
+concurrency:
+  group: schedule-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 collector.py
+      - name: Publish validated public data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/poltava.json
+          git diff --cached --quiet || git commit -m 'Refresh official public schedule'
+          git push
